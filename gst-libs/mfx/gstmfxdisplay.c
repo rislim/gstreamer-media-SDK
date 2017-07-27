@@ -181,9 +181,11 @@ gst_mfx_display_destroy (GstMfxDisplay * display)
 {
   GstMfxDisplayPrivate *const priv = GST_MFX_DISPLAY_GET_PRIVATE (display);
   GstMfxDisplayClass *klass = GST_MFX_DISPLAY_GET_CLASS (display);
+  VAStatus status;
 
   if (priv->va_display) {
-    vaTerminate (priv->va_display);
+    status = vaTerminate (priv->va_display);
+    GST_DEBUG("vaTerminate: status %d", status);
     priv->va_display = NULL;
   }
 
@@ -454,6 +456,7 @@ gst_mfx_display_init_vaapi (GstMfxDisplay * display)
     return FALSE;
 
   status = vaInitialize (priv->va_display, &major_version, &minor_version);
+  GST_DEBUG("vaInitialize: status %d", status);
   if (!vaapi_check_status (status, "vaInitialize()"))
     return FALSE;
 

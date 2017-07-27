@@ -159,6 +159,7 @@ gst_mfx_task_frame_alloc (mfxHDL pthis, mfxFrameAllocRequest * req,
           req->Info.Width, req->Info.Height,
           response_data->surfaces, num_surfaces, &attrib, 1);
       GST_MFX_DISPLAY_UNLOCK (task->display);
+      GST_DEBUG("vaCreateSurfaces: status %d", sts);
       if (!vaapi_check_status (sts, "vaCreateSurfaces ()")) {
         GST_ERROR ("Error allocating VA surfaces %d", sts);
         goto error_allocate_memory;
@@ -184,6 +185,7 @@ gst_mfx_task_frame_alloc (mfxHDL pthis, mfxFrameAllocRequest * req,
       sts = vaCreateBuffer (GST_MFX_DISPLAY_VADISPLAY (task->display),
           context_id, VAEncCodedBufferType, codedbuf_size,
           1, NULL, &response_data->coded_buf[i]);
+      GST_DEBUG("vaCreateBuffer: status %d", sts);
       if (!vaapi_check_status (sts, "vaCreateBuffer ()")) {
         GST_ERROR ("Error allocating VA buffers %d", sts);
         goto error_allocate_memory;
@@ -232,6 +234,7 @@ gst_mfx_task_frame_free (mfxHDL pthis, mfxFrameAllocResponse * resp)
   mfxFrameInfo *info;
   mfxU16 i, num_surfaces;
   ResponseData *response_data;
+  VAStatus sts;
 
   GList *l = g_list_find_custom (task->saved_responses, resp,
       find_response);
@@ -249,19 +252,22 @@ gst_mfx_task_frame_free (mfxHDL pthis, mfxFrameAllocResponse * resp)
       task->backup_surfaces = response_data->surfaces;
     } else {
       GST_MFX_DISPLAY_LOCK (task->display);
-      vaDestroySurfaces (GST_MFX_DISPLAY_VADISPLAY (task->display),
+      sts = vaDestroySurfaces (GST_MFX_DISPLAY_VADISPLAY (task->display),
           response_data->surfaces, num_surfaces);
       GST_MFX_DISPLAY_UNLOCK (task->display);
 
+      GST_DEBUG("vaDestroySurfaces: status %d", sts);
       g_slice_free1 (num_surfaces * sizeof (VASurfaceID),
           response_data->surfaces);
     }
   } else {
     for (i = 0; i < num_surfaces; i++) {
       GST_MFX_DISPLAY_LOCK (task->display);
-      vaDestroyBuffer (GST_MFX_DISPLAY_VADISPLAY (task->display),
+      sts = vaDestroyBuffer (GST_MFX_DISPLAY_VADISPLAY (task->display),
           response_data->coded_buf[i]);
       GST_MFX_DISPLAY_UNLOCK (task->display);
+      GST_DEBUG("vaDestroyBuffer: status %d", sts);
+
     }
     g_slice_free1 (num_surfaces * sizeof (VABufferID),
         response_data->coded_buf);

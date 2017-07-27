@@ -82,6 +82,7 @@ gst_mfx_surface_vaapi_allocate(GstMfxSurface * surface, GstMfxTask * task)
       frame_info->Width, frame_info->Height,
       &surface->surface_id, 1, &attrib, 1);
     GST_MFX_DISPLAY_UNLOCK(surface->display);
+    GST_DEBUG("vaCreateSurfaces: status %d", sts);
     if (!vaapi_check_status(sts, "vaCreateSurfaces ()"))
       return FALSE;
 
@@ -96,12 +97,14 @@ gst_mfx_surface_vaapi_allocate(GstMfxSurface * surface, GstMfxTask * task)
 static void
 gst_mfx_surface_vaapi_release(GstMfxSurface * surface)
 {
+  VAStatus sts;
   /* Don't destroy the underlying VASurface if originally from the task allocator*/
   if (!surface->task) {
     GST_MFX_DISPLAY_LOCK(surface->display);
-    vaDestroySurfaces(GST_MFX_DISPLAY_VADISPLAY(surface->display),
+    sts = vaDestroySurfaces(GST_MFX_DISPLAY_VADISPLAY(surface->display),
         &surface->surface_id, 1);
     GST_MFX_DISPLAY_UNLOCK(surface->display);
+    GST_DEBUG("vaDestroySurfaces: status %d", sts);
   }
 }
 
